@@ -16,7 +16,15 @@ q ∈ ℝ       - parameter
 k ∈ ℤ⁺      - range of integer parts of the order
 
 """
-function Characteristicλ(nu_::Real, q::Real; k=1:1) # reduced = true
+function Characteristicλ(q::Real, nu::Real)
+    Characteristicλ(q, nu:nu)
+end
+
+function Characteristicλ(q::Real, k_::FloatRange)
+    @assert isinteger(step(k_)) && round(Int,step(k_))==1 "Range of eigenvalue indices must have unit step"
+
+    k = floor(Int,first(k_)):floor(Int,last(k_))
+    nu_ = first(k_)-floor(Int,last(k_))
     #nu = reduced ? rem(nu_+1,2)-1 : nu_;
     nu = rem(nu_+1,2)-1;
     
@@ -34,7 +42,7 @@ function Characteristicλ(nu_::Real, q::Real; k=1:1) # reduced = true
 end
 
 """ 
-CharacteristicA(q; k=0:4)
+CharacteristicA(q, k)
 
 Characteristic value A_k for Mathieu's equation 
 
@@ -43,10 +51,14 @@ y'' + (A_k - 2 q cos( 2z )) y = 0
 where
 
 q ∈ ℝ  - parameter
-k ∈ ℤ⁺ - eigenvalue index
+k ∈ ℤ⁺ - eigenvalue index, or range of indices
 
 """
-function CharacteristicA(q::Real; k=0:0)
+function CharacteristicA(q::Real, k::Int)
+    CharacteristicA(q,k:k)
+end
+
+function CharacteristicA(q::Real, k::UnitRange)
     @assert all(k.>=0) "Indices must be non-negative integers."
 
     # Boolean indices of even and odd n values
@@ -54,14 +66,14 @@ function CharacteristicA(q::Real; k=0:0)
     io = !ie;
 
     a = Array(Float64,length(k));
-    a[ie] = Characteristicλ(0.0,abs(q),k=k+1)[ie];
+    a[ie] = Characteristicλ(abs(q),k+1)[ie];
     if q>=0
-        a[io] = Characteristicλ(1.0,q,k=k+1)[io]; 
+        a[io] = Characteristicλ(q,k+1)[io]; 
     else
         if 0 in k # maybe not the cleanest way to do it
-            a[io] = Characteristicλ(1.0,abs(q),k=k[2]:last(k))[io[2:end]]
+            a[io] = Characteristicλ(abs(q),k[2]:last(k))[io[2:end]]
         else
-            a[io] = Characteristicλ(1.0,abs(q),k=k)[io]; 
+            a[io] = Characteristicλ(abs(q),k)[io]; 
         end
     end
     return a
@@ -77,21 +89,25 @@ y'' + (B_k - 2 q cos( 2z )) y = 0
 where
 
 q ∈ ℝ  - parameter
-k ∈ ℤ  - eigenvalueindex
+k ∈ ℤ  - eigenvalue index or range of eigenvalues indices
 
 """
-function CharacteristicB(q::Real; k=1:1)
+function CharacteristicB(q::Real, k::Integer)
+    CharacteristicB(q,k:k)
+end
+
+function CharacteristicB(q::Real, k::UnitRange)
     @assert all(k.>0) "Indices must be positive integers."
     # Boolean indices of even and odd n values
     ie = map(iseven, k);
     io = !ie;
 
     b = Array(Float64,length(k));
-    b[ie] = Characteristicλ(0.0,q,k=k)[ie]; 
+    b[ie] = Characteristicλ(q,k)[ie]; 
     if q>=0
-        b[io] = Characteristicλ(1.0,q,k=k)[io];
+        b[io] = Characteristicλ(q,k)[io];
     else
-        b[io] = Characteristicλ(1.0,abs(q),k=k+1)[io]; 
+        b[io] = Characteristicλ(abs(q),k+1)[io]; 
     end
 
     return b
